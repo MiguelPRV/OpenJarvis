@@ -1144,6 +1144,68 @@ export async function getMemoryConfig(): Promise<MemoryConfig> {
   return res.json();
 }
 
+// --- Learned facts (the "Memories" screen) --------------------------------
+
+export interface MemoryFact {
+  index: number;
+  text: string;
+  source: string;
+  created_at: number;
+  trust: string;
+  trusted_for_recall: boolean;
+}
+
+export interface MemoryExtractionStatus {
+  enabled: boolean;
+  running: boolean;
+}
+
+export interface MemoryFactsResponse {
+  facts: MemoryFact[];
+  count: number;
+  extraction: MemoryExtractionStatus;
+}
+
+export async function fetchMemoryFacts(): Promise<MemoryFactsResponse> {
+  let res: Response;
+  try {
+    res = await apiFetch('/v1/memory/facts');
+  } catch {
+    throw new Error('Could not reach the OpenJarvis API. Check the server status and API URL, then retry.');
+  }
+  if (!res.ok) throw new Error(await memoryErrorDetail(res, 'Failed to load memories'));
+  return res.json();
+}
+
+export async function updateMemoryFact(
+  index: number,
+  changes: { text?: string; trust?: string; expected_text?: string },
+): Promise<{ fact: MemoryFact; count: number }> {
+  const res = await apiFetch(`/v1/memory/facts/${index}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(changes),
+  });
+  if (!res.ok) throw new Error(await memoryErrorDetail(res, 'Failed to update memory'));
+  return res.json();
+}
+
+export async function deleteMemoryFact(index: number, expectedText: string): Promise<void> {
+  const res = await apiFetch(
+    `/v1/memory/facts/${index}?expected_text=${encodeURIComponent(expectedText)}`,
+    { method: 'DELETE' },
+  );
+  if (!res.ok) throw new Error(await memoryErrorDetail(res, 'Failed to delete memory'));
+}
+
+export async function setMemoryExtraction(paused: boolean): Promise<MemoryExtractionStatus> {
+  const res = await apiFetch(`/v1/memory/extraction/${paused ? 'pause' : 'resume'}`, {
+    method: 'POST',
+  });
+  if (!res.ok) throw new Error(await memoryErrorDetail(res, 'Failed to change memory extraction'));
+  return res.json();
+}
+
 // ---------------------------------------------------------------------------
 // Approvals
 // ---------------------------------------------------------------------------

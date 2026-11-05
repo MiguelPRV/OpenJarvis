@@ -244,6 +244,11 @@ class MemoryService:
 
     # -- store passthroughs -------------------------------------------------
 
+    @property
+    def store(self) -> FactStore:
+        """The underlying fact store (used by the review/management API)."""
+        return self._store
+
     def list_facts(self) -> List[Fact]:
         return self._store.list()
 

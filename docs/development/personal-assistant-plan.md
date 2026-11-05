@@ -122,13 +122,22 @@ Each phase is independently shippable and keeps existing behaviour intact.
 - Establish the mobile drawer default so phone visitors land on content, not on
   an overlay.
 
-### Phase 1 — Memory you can see and control
+### Phase 1 — Memory you can see and control ✅ shipped
 
-- Add `GET/PATCH/DELETE /v1/memory/facts` over the existing `FactStore`.
-- Build a "Memories" screen: list, search, edit, delete, pause extraction.
-- Keep the existing enable/top-k/min-score controls; add provenance (when a
-  fact was learned, from which conversation).
-- No new services, no cost. This is the highest-trust-per-effort change.
+- `GET/PATCH/DELETE /v1/memory/facts` over the existing `FactStore`
+  (`src/openjarvis/server/memory_facts_routes.py`), plus
+  `GET|POST /v1/memory/extraction[/pause|/resume]`.
+- `LocalFactStore.remove()` / `update_text()` do the edits under the existing
+  lock with an `expected_text` identity guard, so a concurrent extraction can
+  never rewrite or delete the wrong fact.
+- "Memories" screen (`frontend/src/pages/MemoriesPage.tsx`, route `/memories`,
+  sidebar entry): list, search, inline edit, two-step delete, trust/provenance
+  badges, learned date and source, plus pause/resume of background learning.
+- The API works with extraction off too: it falls back to a store over the
+  configured `facts_path`, so facts learned earlier stay reviewable.
+- Remaining follow-ups: per-fact provenance of the originating conversation
+  (today the source is the extraction channel, e.g. `auto`), and persisting the
+  pause state across restarts (currently in-memory).
 
 ### Phase 2 — Personal dashboard
 

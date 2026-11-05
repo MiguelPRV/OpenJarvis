@@ -200,6 +200,23 @@ class FactStore(ABC):
         del expected_text
         return self.set_trust(index, TRUST_TRUSTED)
 
+    def remove(self, index: int, expected_text: str = "") -> bool:
+        """Delete the *index*-th fact (0-based, as returned by :meth:`list`).
+
+        ``expected_text`` guards against deleting the wrong entry when a
+        concurrent writer has shifted the list since the caller read it.
+        Returns True if a fact was removed.
+        """
+        raise NotImplementedError
+
+    def update_text(self, index: int, text: str, expected_text: str = "") -> bool:
+        """Replace the text of the *index*-th fact.
+
+        The fact keeps its ``source``, ``created_at`` and ``trust``. Returns
+        True if the fact was updated.
+        """
+        raise NotImplementedError
+
     @abstractmethod
     def list(self) -> List[Fact]:
         """Return all stored facts, oldest first."""
@@ -361,6 +378,47 @@ class LocalFactStore(FactStore):
             if fact.text != expected_text or fact.trusted_for_recall:
                 return False
             fact.trust = TRUST_TRUSTED
+            self._flush()
+        return True
+
+    def remove(self, index: int, expected_text: str = "") -> bool:
+        with self._lock, _cross_process_lock(self._lock_path()):
+            self._sync_from_disk_locked()
+            if not 0 <= index < len(self._facts):
+                return False
+            if expected_text and self._facts[index].text != expected_text:
+                return False
+            del self._facts[index]
+            self._flush()
+        return True
+
+    def update_text(self, index: int, text: str, expected_text: str = "") -> bool:
+        text = (text or "").strip()
+        if not text:
+            return False
+        with self._lock, _cross_process_lock(self._lock_path()):
+            self._sync_from_disk_locked()
+            if not 0 <= index < len(self._facts):
+                return False
+            previous = self._facts[index]
+            if expected_text and previous.text != expected_text:
+                return False
+            lowered = text.lower()
+            # Keep the store de-duplicated: an edit may not collide with
+            # another entry (the duplicate would be silently dropped on the
+            # next ``add`` anyway).
+            if any(
+                fact.text.lower() == lowered
+                for position, fact in enumerate(self._facts)
+                if position != index
+            ):
+                return False
+            self._facts[index] = Fact(
+                text=text,
+                source=previous.source,
+                created_at=previous.created_at,
+                trust=previous.trust,
+            )
             self._flush()
         return True
 

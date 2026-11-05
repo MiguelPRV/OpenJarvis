@@ -502,3 +502,61 @@ def test_load_configured_facts_skips_disabled_memory():
     config = SimpleNamespace(memory=SimpleNamespace(enabled=False))
 
     assert load_configured_facts(config) == []
+
+
+def test_remove_by_index_persists(tmp_path):
+    path = tmp_path / "facts.jsonl"
+    store = LocalFactStore(path)
+    store.add("Likes tea")
+    store.add("Lives in Stockholm")
+
+    assert store.remove(0, expected_text="Likes tea") is True
+    assert [fact.text for fact in store.list()] == ["Lives in Stockholm"]
+    assert [fact.text for fact in LocalFactStore(path).list()] == ["Lives in Stockholm"]
+
+
+def test_remove_rejects_stale_expected_text(tmp_path):
+    store = LocalFactStore(tmp_path / "facts.jsonl")
+    store.add("Likes tea")
+
+    assert store.remove(0, expected_text="Likes coffee") is False
+    assert store.count() == 1
+
+
+def test_remove_out_of_range_is_a_no_op(tmp_path):
+    store = LocalFactStore(tmp_path / "facts.jsonl")
+    store.add("Likes tea")
+
+    assert store.remove(5) is False
+    assert store.count() == 1
+
+
+def test_update_text_keeps_provenance_and_persists(tmp_path):
+    path = tmp_path / "facts.jsonl"
+    store = LocalFactStore(path)
+    store.add_with_trust("User likes cofee", source="chat", trust=TRUST_TRUSTED)
+
+    assert store.update_text(0, "User likes coffee", expected_text="User likes cofee") is True
+
+    [fact] = LocalFactStore(path).list()
+    assert fact.text == "User likes coffee"
+    assert fact.source == "chat"
+    assert fact.trust == TRUST_TRUSTED
+
+
+def test_update_text_rejects_duplicate(tmp_path):
+    store = LocalFactStore(tmp_path / "facts.jsonl")
+    store.add("Likes tea")
+    store.add("Likes coffee")
+
+    assert store.update_text(0, "likes coffee") is False
+    assert [fact.text for fact in store.list()] == ["Likes tea", "Likes coffee"]
+
+
+def test_update_text_rejects_empty_and_stale_index(tmp_path):
+    store = LocalFactStore(tmp_path / "facts.jsonl")
+    store.add("Likes tea")
+
+    assert store.update_text(0, "   ") is False
+    assert store.update_text(1, "Likes coffee") is False
+    assert [fact.text for fact in store.list()] == ["Likes tea"]
