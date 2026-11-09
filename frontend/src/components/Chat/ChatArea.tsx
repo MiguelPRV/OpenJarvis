@@ -16,7 +16,11 @@ function getGreeting(): string {
   return 'Good evening';
 }
 
-export function ChatArea() {
+/**
+ * `compact` renders the conversation for a narrow surface (the global Jarvis
+ * dock): the system panel has nowhere to open there, so its toggle is hidden.
+ */
+export function ChatArea({ compact = false }: { compact?: boolean }) {
   const activeId = useAppStore((s) => s.activeId);
   const messages = useAppStore((s) => s.messages);
   const streamState = useAppStore((s) => s.streamState);
@@ -135,16 +139,18 @@ export function ChatArea() {
   return (
     <div className="flex flex-col h-full">
       {/* Toggle bar */}
-      <div className="flex items-center justify-end px-3 py-1.5 shrink-0">
-        <button
-          onClick={toggleSystemPanel}
-          className="p-1.5 rounded-md transition-colors cursor-pointer"
-          style={{ color: 'var(--color-text-tertiary)' }}
-          title={`${systemPanelOpen ? 'Hide' : 'Show'} system panel (${navigator.platform.includes('Mac') ? '⌘' : 'Ctrl'}+I)`}
-        >
-          <PanelIcon size={16} />
-        </button>
-      </div>
+      {!compact && (
+        <div className="flex items-center justify-end px-3 py-1.5 shrink-0">
+          <button
+            onClick={toggleSystemPanel}
+            className="p-1.5 rounded-md transition-colors cursor-pointer"
+            style={{ color: 'var(--color-text-tertiary)' }}
+            title={`${systemPanelOpen ? 'Hide' : 'Show'} system panel (${navigator.platform.includes('Mac') ? '⌘' : 'Ctrl'}+I)`}
+          >
+            <PanelIcon size={16} />
+          </button>
+        </div>
+      )}
 
       {/* Data sources banner */}
       {hasConnectedSources === false && !bannerDismissed && (
@@ -255,7 +261,7 @@ export function ChatArea() {
           </div>
         )}
       </div>
-      <InputArea />
+      <InputArea autoFocus={compact} />
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Outlet, useNavigate } from 'react-router';
 import { ApprovalBell } from './ApprovalBell';
+import { JarvisDock } from './Chat/JarvisDock';
 import { Sidebar } from './Sidebar/Sidebar';
 import { SystemPulse } from './SystemPulse';
 import { useAppStore } from '../lib/store';
@@ -69,6 +70,7 @@ export function Layout() {
           </div>
         </main>
       </div>
+      <JarvisDock />
     </div>
   );
 }

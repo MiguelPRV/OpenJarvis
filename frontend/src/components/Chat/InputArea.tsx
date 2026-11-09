@@ -79,7 +79,7 @@ function useResearchCorpusSync(enabled: boolean): {
   return state;
 }
 
-export function InputArea() {
+export function InputArea({ autoFocus = false }: { autoFocus?: boolean } = {}) {
   const [input, setInput] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -154,6 +154,12 @@ export function InputArea() {
       await startRecording();
     }
   }, [speechState, startRecording, stopRecording]);
+
+  // The global Jarvis dock mounts this input over another page; focusing it
+  // keeps opening the dock to a single gesture.
+  useEffect(() => {
+    if (autoFocus) textareaRef.current?.focus();
+  }, [autoFocus]);
 
   useEffect(() => {
     const el = textareaRef.current;
