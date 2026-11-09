@@ -8,6 +8,12 @@ import { GetStartedPage } from './pages/GetStartedPage';
 import { AgentsPage } from './pages/AgentsPage';
 import { DataSourcesPage } from './pages/DataSourcesPage';
 import { LogsPage } from './pages/LogsPage';
+import { WorkspaceLayout } from './components/Workspace/WorkspaceLayout';
+import { WorkspacePage } from './pages/WorkspacePage';
+import { WorkspaceTasksPage } from './pages/WorkspaceTasksPage';
+import { WorkspaceMemoryPage } from './pages/WorkspaceMemoryPage';
+import { WorkspaceAssistantPage } from './pages/WorkspaceAssistantPage';
+import { WorkspaceIntegrationsPage } from './pages/WorkspaceIntegrationsPage';
 import { CommandPalette } from './components/CommandPalette';
 import { SetupScreen } from './components/SetupScreen';
 import { Toaster } from './components/ui/sonner';
@@ -191,6 +197,13 @@ export default function App() {
           <Route path="data-sources" element={<DataSourcesPage />} />
           <Route path="agents" element={<AgentsPage />} />
           <Route path="logs" element={<LogsPage />} />
+          <Route path="workspace" element={<WorkspaceLayout />}>
+            <Route index element={<WorkspacePage />} />
+            <Route path="tasks" element={<WorkspaceTasksPage />} />
+            <Route path="memory" element={<WorkspaceMemoryPage />} />
+            <Route path="assistant" element={<WorkspaceAssistantPage />} />
+            <Route path="integrations" element={<WorkspaceIntegrationsPage />} />
+          </Route>
         </Route>
       </Routes>
       <Toaster position="bottom-right" />

@@ -17,6 +17,7 @@ import {
   Loader2,
   ScrollText,
   Database,
+  Briefcase,
 } from 'lucide-react';
 import { ConversationList } from './ConversationList';
 import { useAppStore } from '../../lib/store';
@@ -54,6 +55,7 @@ export function Sidebar() {
 
   const navItems = [
     { path: '/', icon: MessageSquare, label: 'Chat' },
+    { path: '/workspace', icon: Briefcase, label: 'Workspace' },
     { path: '/dashboard', icon: BarChart3, label: 'Dashboard' },
     { path: '/data-sources', icon: Database, label: 'Data Sources' },
     { path: '/agents', icon: Bot, label: 'Agents' },
@@ -194,7 +196,11 @@ export function Sidebar() {
           {/* Bottom nav */}
           <nav className="px-2 pb-3 pt-2 flex flex-col gap-0.5" style={{ borderTop: '1px solid var(--color-border)' }}>
             {navItems.map((item) => {
-              const isActive = location.pathname === item.path;
+              const isActive =
+                item.path === '/workspace'
+                  ? location.pathname === '/workspace' ||
+                    location.pathname.startsWith('/workspace/')
+                  : location.pathname === item.path;
               return (
                 <button
                   key={item.path}
