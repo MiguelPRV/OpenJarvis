@@ -20,7 +20,7 @@ import {
   Briefcase,
 } from 'lucide-react';
 import { ConversationList } from './ConversationList';
-import { useAppStore } from '../../lib/store';
+import { isNarrowViewport, useAppStore } from '../../lib/store';
 
 export function Sidebar() {
   const navigate = useNavigate();
@@ -204,7 +204,10 @@ export function Sidebar() {
               return (
                 <button
                   key={item.path}
-                  onClick={() => navigate(item.path)}
+                  onClick={() => {
+                    navigate(item.path);
+                    if (isNarrowViewport()) useAppStore.getState().setSidebarOpen(false);
+                  }}
                   className="relative flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors w-full text-left cursor-pointer"
                   style={{
                     background: isActive ? 'var(--color-accent-subtle)' : 'transparent',

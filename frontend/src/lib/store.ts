@@ -265,6 +265,21 @@ interface AppState {
   setModelLoading: (loading: boolean) => void;
 }
 
+/**
+ * Below `md` the sidebar is a drawer: opening it lays a full-screen scrim over
+ * the chat, so it must start closed there or the app opens with every tap
+ * blocked. Desktop keeps the sidebar visible, as before.
+ */
+export const isNarrowViewport = (): boolean =>
+  typeof window !== 'undefined' &&
+  typeof window.matchMedia === 'function' &&
+  window.matchMedia('(max-width: 767px)').matches;
+
+const INITIAL_SIDEBAR_OPEN =
+  typeof window === 'undefined' || typeof window.matchMedia !== 'function'
+    ? true
+    : !isNarrowViewport();
+
 export const useAppStore = create<AppState>((set, get) => {
   const initial = loadConversations();
   const convList = Object.values(initial.conversations).sort(
@@ -289,7 +304,7 @@ export const useAppStore = create<AppState>((set, get) => {
     settings: loadSettings(),
 
     commandPaletteOpen: false,
-    sidebarOpen: true,
+    sidebarOpen: INITIAL_SIDEBAR_OPEN,
     systemPanelOpen: true,
 
     optInEnabled: localStorage.getItem(OPTIN_KEY) === 'true',
