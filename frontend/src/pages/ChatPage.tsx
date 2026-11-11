@@ -10,7 +10,13 @@ export function ChatPage() {
       <div className="flex-1 min-w-0">
         <ChatArea />
       </div>
-      {systemPanelOpen && <SystemPanel />}
+      {/* Metrics are supplementary: at phone widths the panel would take half
+          the screen and squeeze the conversation, so it only shows from md up. */}
+      {systemPanelOpen && (
+        <div className="hidden md:block">
+          <SystemPanel />
+        </div>
+      )}
     </div>
   );
 }

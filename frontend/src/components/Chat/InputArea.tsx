@@ -3,13 +3,14 @@ import { Send, Square, Paperclip, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAppStore, generateId } from '../../lib/store';
 import { streamChat, streamResearch } from '../../lib/sse';
-import { fetchSavings, getBase } from '../../lib/api';
+import { apiFetch, fetchSavings, getBase } from '../../lib/api';
 import { listConnectors, getSyncStatus } from '../../lib/connectors-api';
 import { serializeToolCallArguments } from '../../lib/tool-call';
 import {
   engineFromCompletionChunk,
   resolveChatEngine,
 } from '../../lib/chat-telemetry';
+import { withPageContext } from '../../lib/page-context';
 import { MicButton } from './MicButton';
 import { useSpeech } from '../../hooks/useSpeech';
 import type {
@@ -79,7 +80,14 @@ function useResearchCorpusSync(enabled: boolean): {
   return state;
 }
 
-export function InputArea() {
+interface InputAreaProps {
+  /** Focus the composer when the surface opens (the global Jarvis dock). */
+  autoFocus?: boolean;
+  /** Transient page context, sent as a system message with each request. */
+  pageContext?: string | null;
+}
+
+export function InputArea({ autoFocus = false, pageContext = null }: InputAreaProps = {}) {
   const [input, setInput] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -162,6 +170,12 @@ export function InputArea() {
     el.style.height = Math.min(el.scrollHeight, 200) + 'px';
   }, [input]);
 
+  // The dock mounts this composer over another page; focusing it keeps
+  // opening the assistant to a single gesture.
+  useEffect(() => {
+    if (autoFocus) textareaRef.current?.focus();
+  }, [autoFocus]);
+
   const stopStreaming = useCallback(() => {
     abortRef.current?.abort();
     if (timerRef.current) {
@@ -194,12 +208,17 @@ export function InputArea() {
     };
     addMessage(convId, userMsg);
 
-    // Build API messages before adding assistant placeholder
+    // Build API messages before adding assistant placeholder. The page context
+    // is added to this request only — it is never written into the stored
+    // conversation, so history stays exactly what the user and model said.
     const currentMessages = useAppStore.getState().messages;
-    const apiMessages = currentMessages.map((m) => ({
-      role: m.role,
-      content: m.content,
-    }));
+    const apiMessages = withPageContext(
+      currentMessages.map((m) => ({
+        role: m.role,
+        content: m.content,
+      })),
+      pageContext,
+    );
 
     const assistantMsg: ChatMessage = {
       id: generateId(),
@@ -497,7 +516,7 @@ export function InputArea() {
       // Check if the response has digest audio available
       let audioMeta: { url: string } | undefined;
       try {
-        const digestRes = await fetch(`${getBase()}/api/digest`);
+        const digestRes = await apiFetch('/api/digest');
         if (digestRes.ok) {
           const digest = await digestRes.json();
           if (digest.audio_available) {
@@ -552,6 +571,7 @@ export function InputArea() {
     deepResearch,
     temperature,
     maxTokens,
+    pageContext,
   ]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

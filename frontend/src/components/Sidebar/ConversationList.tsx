@@ -1,6 +1,6 @@
 import { Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router';
-import { useAppStore } from '../../lib/store';
+import { isNarrowViewport, useAppStore } from '../../lib/store';
 
 interface Props {
   searchQuery: string;
@@ -65,6 +65,7 @@ export function ConversationList({ searchQuery }: Props) {
               onClick={() => {
                 selectConversation(conv.id);
                 navigate('/');
+                if (isNarrowViewport()) useAppStore.getState().setSidebarOpen(false);
               }}
               className="flex-1 text-left px-3 py-2 min-w-0 cursor-pointer"
             >
