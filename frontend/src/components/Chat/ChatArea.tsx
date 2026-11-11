@@ -16,7 +16,18 @@ function getGreeting(): string {
   return 'Good evening';
 }
 
-export function ChatArea() {
+/**
+ * `compact` renders the conversation for a narrow surface (the global Jarvis
+ * dock): the system panel and the wide empty-state shortcuts have nowhere to
+ * go there, so they are hidden and the composer takes focus.
+ */
+export function ChatArea({
+  compact = false,
+  pageContext = null,
+}: {
+  compact?: boolean;
+  pageContext?: string | null;
+}) {
   const activeId = useAppStore((s) => s.activeId);
   const messages = useAppStore((s) => s.messages);
   const streamState = useAppStore((s) => s.streamState);
@@ -135,19 +146,21 @@ export function ChatArea() {
   return (
     <div className="flex flex-col h-full">
       {/* Toggle bar */}
-      <div className="flex items-center justify-end px-3 py-1.5 shrink-0">
-        <button
-          onClick={toggleSystemPanel}
-          className="p-1.5 rounded-md transition-colors cursor-pointer"
-          style={{ color: 'var(--color-text-tertiary)' }}
-          title={`${systemPanelOpen ? 'Hide' : 'Show'} system panel (${navigator.platform.includes('Mac') ? '⌘' : 'Ctrl'}+I)`}
-        >
-          <PanelIcon size={16} />
-        </button>
-      </div>
+      {!compact && (
+        <div className="flex items-center justify-end px-3 py-1.5 shrink-0">
+          <button
+            onClick={toggleSystemPanel}
+            className="p-1.5 rounded-md transition-colors cursor-pointer"
+            style={{ color: 'var(--color-text-tertiary)' }}
+            title={`${systemPanelOpen ? 'Hide' : 'Show'} system panel (${navigator.platform.includes('Mac') ? '⌘' : 'Ctrl'}+I)`}
+          >
+            <PanelIcon size={16} />
+          </button>
+        </div>
+      )}
 
       {/* Data sources banner */}
-      {hasConnectedSources === false && !bannerDismissed && (
+      {!compact && hasConnectedSources === false && !bannerDismissed && (
         <div
           className="mx-4 mb-2 flex items-center gap-3 px-4 py-3 rounded-lg text-sm shrink-0"
           style={{
@@ -195,8 +208,8 @@ export function ChatArea() {
               Ask anything. Your AI runs locally — private, fast, and always available.
             </p>
 
-            {/* Quick action hints */}
-            <div className="flex gap-3">
+            {/* Quick action hints — the dock is too narrow for the pair. */}
+            <div className={compact ? 'hidden' : 'flex gap-3'}>
               <button
                 onClick={() => navigate('/data-sources')}
                 className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs cursor-pointer transition-colors"
@@ -255,7 +268,7 @@ export function ChatArea() {
           </div>
         )}
       </div>
-      <InputArea />
+      <InputArea autoFocus={compact} pageContext={pageContext} />
     </div>
   );
 }
